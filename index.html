@@ -166,9 +166,6 @@
   video.setAttribute("preload", "auto");
   video.muted = true; // Start muted due to autoplay restrictions
 
-  // Ensure correct aspect ratio
-  video.style.objectFit = "cover"; // Prevents stretching
-
   // Create video texture
   const texture = new THREE.VideoTexture(video);
   texture.minFilter = THREE.LinearFilter;
@@ -179,24 +176,33 @@
   plane.getObject3D('mesh').material.map = texture;
   plane.getObject3D('mesh').material.opacity = 1;
 
-  // Function to adjust video scaling to fit the target image
+  // Function to adjust video size based on image tracking
   function adjustVideoSize() {
-    const videoRatio = video.videoWidth / video.videoHeight;
-    const targetRatio = plane.getAttribute("width") / plane.getAttribute("height");
+    const videoAspect = video.videoWidth / video.videoHeight;
 
-    if (videoRatio > targetRatio) {
-      // Video is wider than the target, scale by width
-      plane.setAttribute("scale", `1 ${targetRatio / videoRatio} 1`);
+    // Get the actual dimensions of the tracked image
+    const imageWidth = plane.getAttribute("width");
+    const imageHeight = plane.getAttribute("height");
+    const imageAspect = imageWidth / imageHeight;
+
+    // Determine how to scale the video to fit within the image target
+    let scaleX, scaleY;
+    if (videoAspect > imageAspect) {
+      scaleX = imageWidth;
+      scaleY = imageWidth / videoAspect;
     } else {
-      // Video is taller than the target, scale by height
-      plane.setAttribute("scale", `${videoRatio / targetRatio} 1 1`);
+      scaleX = imageHeight * videoAspect;
+      scaleY = imageHeight;
     }
+
+    // Apply scale adjustments to match the image
+    plane.setAttribute("scale", `${scaleX} ${scaleY} 1`);
   }
 
-  // Adjust size once video metadata is loaded
+  // Wait for the video to load its metadata (dimensions)
   video.addEventListener("loadedmetadata", adjustVideoSize);
 
-  // Handle target found (start video)
+  // Handle target found (start video and adjust size)
   targetEntity.addEventListener("targetFound", function () {
     console.log(`Target ${config.targetIndex} found`);
     video.play().catch(error => console.log("Autoplay prevented:", error)); // Catch autoplay issues
@@ -218,6 +224,7 @@
     }
   }, { once: true }); // Ensure it only runs once per page load
 }
+
 
   </script>
 </body>
