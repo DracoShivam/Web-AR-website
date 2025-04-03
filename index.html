@@ -87,8 +87,8 @@
       <a-plane
         id="video-plane-0"
         class="clickable"
-        width="0.552"
-        height="1"
+        width="9"
+        height="16"
         position="0 0 0"
         rotation="0 0 0"
         material="shader: flat; side: double; transparent: true; opacity: 0">
@@ -164,66 +164,45 @@
   video.playsInline = true;
   video.loop = true;
   video.setAttribute("preload", "auto");
-  video.muted = true; // Start muted due to autoplay restrictions
+  video.muted = true;
 
-  // Create video texture
+  // Force the video to match 9:16 (1080x606) by setting exact size
+  const imageWidth = 0.606;  // 606px scaled down
+  const imageHeight = 1.08;  // 1080px scaled down
+
+  plane.setAttribute("width", imageWidth);
+  plane.setAttribute("height", imageHeight);
+  plane.setAttribute("scale", "1 1 1"); // Ensure no default scaling
+
+  // Create video texture and apply
   const texture = new THREE.VideoTexture(video);
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.format = THREE.RGBFormat;
 
-  // Apply texture to plane
+  // Apply texture to the plane
   plane.getObject3D('mesh').material.map = texture;
   plane.getObject3D('mesh').material.opacity = 1;
 
-  // Function to adjust video size based on image tracking
-  function adjustVideoSize() {
-    const videoAspect = video.videoWidth / video.videoHeight;
-
-    // Get the actual dimensions of the tracked image
-    const imageWidth = plane.getAttribute("width");
-    const imageHeight = plane.getAttribute("height");
-    const imageAspect = imageWidth / imageHeight;
-
-    // Determine how to scale the video to fit within the image target
-    let scaleX, scaleY;
-    if (videoAspect > imageAspect) {
-      scaleX = imageWidth;
-      scaleY = imageWidth / videoAspect;
-    } else {
-      scaleX = imageHeight * videoAspect;
-      scaleY = imageHeight;
-    }
-
-    // Apply scale adjustments to match the image
-    plane.setAttribute("scale", `${scaleX} ${scaleY} 1`);
-  }
-
-  // Wait for the video to load its metadata (dimensions)
-  video.addEventListener("loadedmetadata", adjustVideoSize);
-
-  // Handle target found (start video and adjust size)
+  // Start video when target is detected
   targetEntity.addEventListener("targetFound", function () {
-    console.log(`Target ${config.targetIndex} found`);
-    video.play().catch(error => console.log("Autoplay prevented:", error)); // Catch autoplay issues
-    adjustVideoSize(); // Ensure correct size when tracking starts
+    video.play().catch(error => console.log("Autoplay prevented:", error));
   });
 
-  // Handle target lost (pause video)
+  // Pause video when target is lost
   targetEntity.addEventListener("targetLost", function () {
-    console.log(`Target ${config.targetIndex} lost`);
     video.pause();
   });
 
-  // Allow user to enable sound with a click
+  // Enable sound on user interaction
   document.body.addEventListener("click", function () {
     if (video.muted) {
       video.muted = false;
       video.play();
-      console.log("User interaction detected: Unmuting video.");
     }
-  }, { once: true }); // Ensure it only runs once per page load
+  }, { once: true });
 }
+
 
 
   </script>
