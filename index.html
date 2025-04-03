@@ -87,8 +87,8 @@
       <a-plane
         id="video-plane-0"
         class="clickable"
-        width="1"
-        height="0.552"
+        width="0.552"
+        height="1"
         position="0 0 0"
         rotation="0 0 0"
         material="shader: flat; side: double; transparent: true; opacity: 0">
@@ -162,9 +162,17 @@
       const video = document.createElement("video");
       video.src = config.videoUrl;
       video.playsInline = true;
-      video.muted = true;
       video.loop = true;
       video.setAttribute("preload", "auto");
+      video.setAttribute("controls", "true"); // Adds play/pause controls
+      video.setAttribute("autoplay", "true");
+      video.setAttribute("muted", "false"); // Enable sound
+
+      video.addEventListener("click", function() {
+        video.muted = false;
+        video.play();
+    });
+      
       
       // Create video texture
       const texture = new THREE.VideoTexture(video);
