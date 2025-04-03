@@ -155,58 +155,70 @@
     });
     
     function setupVideoTarget(config) {
-      const plane = document.querySelector(`#${config.planeId}`);
-      const targetEntity = document.querySelector(`a-entity[mindar-image-target="targetIndex: ${config.targetIndex}"]`);
-      
-      // Create video element
-      const video = document.createElement("video");
-      video.src = config.videoUrl;
-      video.playsInline = true;
-      video.loop = true;
-      video.setAttribute("preload", "auto");
-      video.setAttribute("controls", "true"); // Adds play/pause controls
-      video.setAttribute("autoplay", "true");
-      video.muted = true; // Enable sound
+  const plane = document.querySelector(`#${config.planeId}`);
+  const targetEntity = document.querySelector(`a-entity[mindar-image-target="targetIndex: ${config.targetIndex}"]`);
 
+  // Create video element
+  const video = document.createElement("video");
+  video.src = config.videoUrl;
+  video.playsInline = true;
+  video.loop = true;
+  video.setAttribute("preload", "auto");
+  video.muted = true; // Start muted due to autoplay restrictions
 
-      video.addEventListener("click", function() {
-        video.muted = false;
-        video.play();
-    });
-      
-      
-      // Create video texture
-      const texture = new THREE.VideoTexture(video);
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.format = THREE.RGBFormat;
-      
-      // Apply texture to plane
-      plane.getObject3D('mesh').material.map = texture;
-      plane.getObject3D('mesh').material.opacity = 1;
-      
-      // Handle target found/lost events
-      targetEntity.addEventListener("targetFound", function() {
-        console.log(`Target ${config.targetIndex} found`);
-        video.play();
-        plane.setAttribute("scale","1 1 1");
-      });
-      
-      targetEntity.addEventListener("targetLost", function() {
-        console.log(`Target ${config.targetIndex} lost`);
-        video.pause();
-      });
-      
-      // Add click interaction to pause/play
-      plane.addEventListener("click", function() {
-        if (video.paused) {
-          video.play();
-        } else {
-          video.pause();
-          plane.setAttribute("scale", "0.5 0.5 0.5");
-        }
-      });
+  // Ensure correct aspect ratio
+  video.style.objectFit = "cover"; // Prevents stretching
+
+  // Create video texture
+  const texture = new THREE.VideoTexture(video);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.format = THREE.RGBFormat;
+
+  // Apply texture to plane
+  plane.getObject3D('mesh').material.map = texture;
+  plane.getObject3D('mesh').material.opacity = 1;
+
+  // Function to adjust video scaling to fit the target image
+  function adjustVideoSize() {
+    const videoRatio = video.videoWidth / video.videoHeight;
+    const targetRatio = plane.getAttribute("width") / plane.getAttribute("height");
+
+    if (videoRatio > targetRatio) {
+      // Video is wider than the target, scale by width
+      plane.setAttribute("scale", `1 ${targetRatio / videoRatio} 1`);
+    } else {
+      // Video is taller than the target, scale by height
+      plane.setAttribute("scale", `${videoRatio / targetRatio} 1 1`);
     }
+  }
+
+  // Adjust size once video metadata is loaded
+  video.addEventListener("loadedmetadata", adjustVideoSize);
+
+  // Handle target found (start video)
+  targetEntity.addEventListener("targetFound", function () {
+    console.log(`Target ${config.targetIndex} found`);
+    video.play().catch(error => console.log("Autoplay prevented:", error)); // Catch autoplay issues
+    adjustVideoSize(); // Ensure correct size when tracking starts
+  });
+
+  // Handle target lost (pause video)
+  targetEntity.addEventListener("targetLost", function () {
+    console.log(`Target ${config.targetIndex} lost`);
+    video.pause();
+  });
+
+  // Allow user to enable sound with a click
+  document.body.addEventListener("click", function () {
+    if (video.muted) {
+      video.muted = false;
+      video.play();
+      console.log("User interaction detected: Unmuting video.");
+    }
+  }, { once: true }); // Ensure it only runs once per page load
+}
+
   </script>
 </body>
 </html>
