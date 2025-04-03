@@ -166,7 +166,8 @@
       video.setAttribute("preload", "auto");
       video.setAttribute("controls", "true"); // Adds play/pause controls
       video.setAttribute("autoplay", "true");
-      video.setAttribute("muted", "false"); // Enable sound
+      video.muted = true; // Enable sound
+
 
       video.addEventListener("click", function() {
         video.muted = false;
@@ -188,6 +189,7 @@
       targetEntity.addEventListener("targetFound", function() {
         console.log(`Target ${config.targetIndex} found`);
         video.play();
+        plane.setAttribute("scale","1 1 1");
       });
       
       targetEntity.addEventListener("targetLost", function() {
@@ -201,6 +203,7 @@
           video.play();
         } else {
           video.pause();
+          plane.setAttribute("scale", "0.5 0.5 0.5");
         }
       });
     }
