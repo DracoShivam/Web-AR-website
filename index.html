@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAR Image Tracking Video Player</title>
+  
+  <!-- Import A-Frame -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+  
+  <!-- Import A-Frame Image Tracking component -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    button {
+      padding: 12px 24px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    
+    .instructions {
+      text-align: center;
+      max-width: 80%;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Loading/Start Screen -->
+  <div id="loading-screen">
+    <div class="instructions">
+      <h2>WebAR Image Tracking Video Player</h2>
+      <p>Point your camera at the target image to see the video overlay.</p>
+      <p>Make sure you're in a well-lit environment for best tracking results.</p>
+    </div>
+    <button id="start-button">Start Experience</button>
+  </div>
+
+  <!-- A-Frame Scene -->
+  <a-scene
+    mindar-image="imageTargetSrc: ./targets.mind; filterMinCF:0.0001; filterBeta: 0.001; missTolerance: 5;"
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+    
+    <!-- Camera with MindAR -->
+    <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+    
+    <!-- Tracking Target #1 -->
+    <a-entity mindar-image-target="targetIndex: 0">
+      <!-- Video Plane -->
+      <a-plane
+        id="video-plane-0"
+        class="clickable"
+        width="1"
+        height="0.552"
+        position="0 0 0"
+        rotation="0 0 0"
+        material="shader: flat; side: double; transparent: true; opacity: 0">
+      </a-plane>
+    </a-entity>
+    
+    <!-- Tracking Target #2 (optional additional target) -->
+    <a-entity mindar-image-target="targetIndex: 1">
+      <!-- Video Plane -->
+      <a-plane
+        id="video-plane-1"
+        class="clickable"
+        width="1"
+        height="0.552"
+        position="0 0 0"
+        rotation="0 0 0"
+        material="shader: flat; side: double; transparent: true; opacity: 0">
+      </a-plane>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    // Start button functionality
+    document.getElementById('start-button').addEventListener('click', function() {
+      document.getElementById('loading-screen').classList.add('hidden');
+    });
+    
+    // Video mapping configuration
+    const videoConfig = [
+      {
+        targetIndex: 0,
+        videoUrl: "./videos/video1.mp4",
+        planeId: "video-plane-0"
+      },
+      {
+        targetIndex: 1,
+        videoUrl: "./videos/video2.mp4",
+        planeId: "video-plane-1"
+      }
+    ];
+    
+    window.addEventListener('DOMContentLoaded', function() {
+      const sceneEl = document.querySelector('a-scene');
+      
+      // Initialize videos when the AR scene is ready
+      sceneEl.addEventListener('loaded', function() {
+        console.log("A-Frame scene loaded");
+        
+        // Setup each video target
+        videoConfig.forEach(config => {
+          setupVideoTarget(config);
+        });
+      });
+      
+      // Handle visibility changes for battery/performance
+      document.addEventListener('visibilitychange', function() {
+        videoConfig.forEach(config => {
+          const videoElement = document.querySelector(`#${config.planeId}`).getObject3D('mesh').material.map.image;
+          if (document.hidden) {
+            if (!videoElement.paused) videoElement.pause();
+          }
+        });
+      });
+    });
+    
+    function setupVideoTarget(config) {
+      const plane = document.querySelector(`#${config.planeId}`);
+      const targetEntity = document.querySelector(`a-entity[mindar-image-target="targetIndex: ${config.targetIndex}"]`);
+      
+      // Create video element
+      const video = document.createElement("video");
+      video.src = config.videoUrl;
+      video.playsInline = true;
+      video.muted = true;
+      video.loop = true;
+      video.setAttribute("preload", "auto");
+      
+      // Create video texture
+      const texture = new THREE.VideoTexture(video);
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.format = THREE.RGBFormat;
+      
+      // Apply texture to plane
+      plane.getObject3D('mesh').material.map = texture;
+      plane.getObject3D('mesh').material.opacity = 1;
+      
+      // Handle target found/lost events
+      targetEntity.addEventListener("targetFound", function() {
+        console.log(`Target ${config.targetIndex} found`);
+        video.play();
+      });
+      
+      targetEntity.addEventListener("targetLost", function() {
+        console.log(`Target ${config.targetIndex} lost`);
+        video.pause();
+      });
+      
+      // Add click interaction to pause/play
+      plane.addEventListener("click", function() {
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
