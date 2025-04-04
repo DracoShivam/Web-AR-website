@@ -146,7 +146,7 @@
       // Handle visibility changes for battery/performance
       document.addEventListener('visibilitychange', function() {
         videoConfig.forEach(config => {
-          const videoElement = document.querySelector(`#${config.planeId}`).getObject3D('mesh').material.map.image;
+          const videoElement = document.querySelector(#${config.planeId}).getObject3D('mesh').material.map.image;
           if (document.hidden) {
             if (!videoElement.paused) videoElement.pause();
           }
@@ -155,10 +155,9 @@
     });
     
     function setupVideoTarget(config) {
-  const plane = document.querySelector(`#${config.planeId}`);
-  const targetEntity = document.querySelector(`a-entity[mindar-image-target="targetIndex: ${config.targetIndex}"]`);
+  const plane = document.querySelector(#${config.planeId});
+  const targetEntity = document.querySelector(a-entity[mindar-image-target="targetIndex: ${config.targetIndex}"]);
 
-  // Create video element
   const video = document.createElement("video");
   video.src = config.videoUrl;
   video.playsInline = true;
@@ -166,35 +165,30 @@
   video.setAttribute("preload", "auto");
   video.muted = true;
 
-  // Force the video to match 9:16 (1080x606) by setting exact size
-  const imageWidth = 0.606;  // 606px scaled down
-  const imageHeight = 1.08;  // 1080px scaled down
+  // Match your image aspect ratio (606:1077)
+  const imageWidth = 1.2;  
+  const imageHeight = 2.0;  
 
   plane.setAttribute("width", imageWidth);
   plane.setAttribute("height", imageHeight);
-  plane.setAttribute("scale", "1 1 1"); // Ensure no default scaling
+  plane.setAttribute("scale", "1 1 1"); 
 
-  // Create video texture and apply
   const texture = new THREE.VideoTexture(video);
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.format = THREE.RGBFormat;
 
-  // Apply texture to the plane
   plane.getObject3D('mesh').material.map = texture;
   plane.getObject3D('mesh').material.opacity = 1;
 
-  // Start video when target is detected
   targetEntity.addEventListener("targetFound", function () {
     video.play().catch(error => console.log("Autoplay prevented:", error));
   });
 
-  // Pause video when target is lost
   targetEntity.addEventListener("targetLost", function () {
     video.pause();
   });
 
-  // Enable sound on user interaction
   document.body.addEventListener("click", function () {
     if (video.muted) {
       video.muted = false;
