@@ -191,21 +191,6 @@
       // Apply video texture to plane
       plane.getObject3D('mesh').material.map = texture;
       plane.getObject3D('mesh').material.opacity = 1;
-      
-      // Add border to video (match target image borders)
-      const borderWidth = 0.02; // Border width as percentage of video width
-      const borderMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF }); // White border
-      
-      // Create border planes
-      const createBorder = (width, height, posX, posY, rotZ) => {
-        const borderEntity = document.createElement('a-plane');
-        borderEntity.setAttribute('material', 'shader: flat; side: double; color: white');
-        borderEntity.setAttribute('width', width);
-        borderEntity.setAttribute('height', height);
-        borderEntity.setAttribute('position', `${posX} ${posY} -0.01`); // Slightly behind video
-        borderEntity.setAttribute('rotation', `0 0 ${rotZ}`);
-        return borderEntity;
-      };
 
       // Handle audio context activation
       const enableAudio = () => {
@@ -240,25 +225,6 @@
         // Set video plane dimensions to match target exactly
         plane.setAttribute("width", targetWidth);
         plane.setAttribute("height", targetHeight);
-        
-        // Add borders to match the newspaper style
-        const borderThickness = targetWidth * 0.02;
-        
-        // Top border
-        const topBorder = createBorder(targetWidth + borderThickness*2, borderThickness, 0, targetHeight/2 + borderThickness/2, 0);
-        targetEntity.appendChild(topBorder);
-        
-        // Bottom border
-        const bottomBorder = createBorder(targetWidth + borderThickness*2, borderThickness, 0, -targetHeight/2 - borderThickness/2, 0);
-        targetEntity.appendChild(bottomBorder);
-        
-        // Left border
-        const leftBorder = createBorder(borderThickness, targetHeight, -targetWidth/2 - borderThickness/2, 0, 0);
-        targetEntity.appendChild(leftBorder);
-        
-        // Right border
-        const rightBorder = createBorder(borderThickness, targetHeight, targetWidth/2 + borderThickness/2, 0, 0);
-        targetEntity.appendChild(rightBorder);
         
         // Try to play with audio enabled
         const playPromise = video.play();
